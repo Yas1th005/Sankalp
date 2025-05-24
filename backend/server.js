@@ -644,7 +644,7 @@ app.get('/api/secure-video/:moduleId', async (req, res) => {
             
             // Add user identifier as watermark
             const userInfo = document.getElementById('user-info');
-            userInfo.textContent = 'Licensed to: ${email} | Session expires in 5 minutes';
+            userInfo.textContent = 'Licensed to: ${email} | This video is for educational purposes only. Unauthorized distribution is prohibited.';
             
             // Start updating timeline
             updateTimeline();

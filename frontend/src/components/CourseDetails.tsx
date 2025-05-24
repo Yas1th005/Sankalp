@@ -68,11 +68,24 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course, onBack, email, na
     }
   };
 
-  // Update the video selection handler
+  // Update the video selection handler to open the video directly
   const handleVideoSelect = async (moduleId: number) => {
     setSelectedVideo(moduleId);
-    const token = await getVideoToken(moduleId);
-    setVideoToken(token);
+    setIsLoadingVideo(true);
+    
+    try {
+      const token = await getVideoToken(moduleId);
+      if (token) {
+        // Open the secure video player in a new tab
+        window.open(`http://localhost:5000/api/secure-video/${moduleId}?token=${token}`, '_blank');
+      } else {
+        console.error('Failed to get video token');
+      }
+    } catch (error) {
+      console.error('Error playing video:', error);
+    } finally {
+      setIsLoadingVideo(false);
+    }
   };
 
   // Check if user has already registered or has been approved for this course
@@ -164,91 +177,64 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course, onBack, email, na
       case 'approved':
         return (
           <div className="space-y-6">
-            {selectedVideo !== null && (
-              <div className="bg-dark-200 rounded-lg overflow-hidden mb-6">
-                <div className="p-4 bg-dark-300">
-                  <h3 className="text-lg font-semibold text-primary-400">
-                    {course.modules.find(m => m.id === selectedVideo)?.title || 'Video Player'}
-                  </h3>
-                </div>
-                <div className="aspect-w-16 aspect-h-9 bg-black relative">
-                  <iframe 
-                    className="w-full h-[400px]"
-                    src={videoToken ? `http://localhost:5000/api/secure-video/${selectedVideo}?token=${videoToken}` : ''}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    id="videoFrame"
-                  ></iframe>
-                  
-                  {/* Add a warning message */}
-                  <div className="absolute top-0 left-0 right-0 bg-black/80 text-white text-xs p-1 text-center">
-                    This video is for educational purposes only. Unauthorized distribution is prohibited.
-                  </div>
-                </div>
-              </div>
-            )}
-            
             <h3 className="text-xl font-semibold text-primary-400">Course Modules</h3>
-            
-            {course.modules.map((module) => (
-              <motion.div 
-                key={module.id}
-                className="bg-dark-200 rounded-lg overflow-hidden"
-              >
-                <motion.button
-                  whileHover={{ backgroundColor: 'rgba(124, 58, 237, 0.1)' }}
-                  onClick={() => setActiveModule(activeModule === module.id ? null : module.id)}
-                  className="w-full p-4 flex justify-between items-center text-left"
-                >
-                  <div>
-                    <div className="flex items-center">
-                      <span className="text-primary-400 font-medium">Day {module.day}:</span>
-                      <h4 className="ml-2 font-semibold text-gray-200">{module.title}</h4>
-                    </div>
-                    <p className="text-sm text-gray-400 mt-1">{module.description}</p>
-                  </div>
-                  <div className="text-primary-400">
-                    {activeModule === module.id ? '−' : '+'}
-                  </div>
-                </motion.button>
-                
-                {activeModule === module.id && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="px-4 pb-4"
+            <div className="space-y-4">
+              {course.modules.map((module) => (
+                <div key={module.id} className="bg-dark-200 rounded-lg overflow-hidden">
+                  <motion.button
+                    whileHover={{ backgroundColor: 'rgba(124, 58, 237, 0.1)' }}
+                    onClick={() => setActiveModule(activeModule === module.id ? null : module.id)}
+                    className="w-full p-4 flex justify-between items-center text-left"
                   >
-                    <div className="mb-4">
-                      <button
-                        onClick={() => handleVideoSelect(module.id)}
-                        className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md transition duration-200"
-                        disabled={isLoadingVideo}
-                      >
-                        <Play className="w-4 h-4" />
-                        <span>{isLoadingVideo ? 'Loading...' : 'Watch Video'}</span>
-                      </button>
+                    <div>
+                      <div className="flex items-center">
+                        <span className="text-primary-400 font-medium">Day {module.day}:</span>
+                        <h4 className="ml-2 font-semibold text-gray-200">{module.title}</h4>
+                      </div>
+                      <p className="text-sm text-gray-400 mt-1">{module.description}</p>
                     </div>
-                    
-                    <h5 className="text-sm font-medium text-primary-400 mb-2">Materials:</h5>
-                    <ul className="space-y-2 text-gray-300">
-                      {module.materials && module.materials.length > 0 ? (
-                        module.materials.map((material, index) => (
-                          <li key={index} className="bg-dark-300 p-3 rounded">
-                            {material}
+                    <div className="text-primary-400">
+                      {activeModule === module.id ? '−' : '+'}
+                    </div>
+                  </motion.button>
+                  
+                  {activeModule === module.id && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="px-4 pb-4"
+                    >
+                      <div className="mb-4">
+                        <button
+                          onClick={() => handleVideoSelect(module.id)}
+                          className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md transition duration-200"
+                          disabled={isLoadingVideo}
+                        >
+                          <Play className="w-4 h-4" />
+                          <span>{isLoadingVideo ? 'Loading...' : 'Watch Video'}</span>
+                        </button>
+                      </div>
+                      
+                      <h5 className="text-sm font-medium text-primary-400 mb-2">Materials:</h5>
+                      <ul className="space-y-2 text-gray-300">
+                        {module.materials && module.materials.length > 0 ? (
+                          module.materials.map((material, index) => (
+                            <li key={index} className="bg-dark-300 p-3 rounded">
+                              {material}
+                            </li>
+                          ))
+                        ) : (
+                          <li className="bg-dark-300 p-3 rounded text-gray-400">
+                            No materials available for this module.
                           </li>
-                        ))
-                      ) : (
-                        <li className="bg-dark-300 p-3 rounded text-gray-400">
-                          No materials available for this module.
-                        </li>
-                      )}
-                    </ul>
-                  </motion.div>
-                )}
-              </motion.div>
-            ))}
+                        )}
+                      </ul>
+                    </motion.div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         );
         
