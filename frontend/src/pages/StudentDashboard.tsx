@@ -3,25 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import { LogOut, User, Settings, Code, Zap, ArrowLeft } from 'lucide-react';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'framer-motion';
-
-// Import components directly instead of lazy loading to avoid the error
-// If you need lazy loading, make sure your components have proper default exports
-// const CourseCard = lazy(() => import('../components/CourseCard'));
-// const CourseDetails = lazy(() => import('../components/CourseDetails'));
-// const SettingsPage = lazy(() => import('../components/SettingsPage'));
+import SettingsPage from '../components/SettingsPage';
 
 // Temporary inline components to replace the problematic lazy imports
-const CourseCard: React.FC<{
-  course: {
-    id: number;
-    title: string;
-    description: string;
-    duration: string;
-    level: string;
-    image: string;
-  };
-  onClick: () => void;
-}> = ({ course, onClick }) => (
+const CourseCard = ({ course, onClick }) => (
   <motion.div
     whileHover={{ scale: 1.02 }}
     whileTap={{ scale: 0.98 }}
@@ -57,12 +42,7 @@ const CourseCard: React.FC<{
   </motion.div>
 );
 
-const CourseDetails: React.FC<{
-  course: any;
-  onBack: () => void;
-  email?: string;
-  name?: string;
-}> = ({ course, onBack }) => (
+const CourseDetails = ({ course, onBack }) => (
   <div className="space-y-6">
     <div className="flex items-center justify-between">
       <motion.button
@@ -97,7 +77,7 @@ const CourseDetails: React.FC<{
       <div className="space-y-4">
         <h2 className="text-2xl font-bold text-primary-400 font-display">Course Modules</h2>
         <div className="grid gap-4">
-          {course.modules.map((module: any, index: number) => (
+          {course.modules.map((module, index) => (
             <motion.div
               key={module.id}
               initial={{ opacity: 0, y: 20 }}
@@ -114,7 +94,7 @@ const CourseDetails: React.FC<{
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium text-primary-300">Materials:</h4>
                   <ul className="list-disc list-inside text-sm text-gray-400 space-y-1">
-                    {module.materials.map((material: string, materialIndex: number) => (
+                    {module.materials.map((material, materialIndex) => (
                       <li key={materialIndex}>{material}</li>
                     ))}
                   </ul>
@@ -129,7 +109,7 @@ const CourseDetails: React.FC<{
 );
 
 // Optimized Three.js setup
-const setupThreeJS = (mountElement: HTMLDivElement) => {
+const setupThreeJS = (mountElement) => {
   const isMobile = window.innerWidth < 768;
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -170,7 +150,7 @@ const setupThreeJS = (mountElement: HTMLDivElement) => {
   const ambientLight = new THREE.AmbientLight(0x7c3aed, 0.4);
   scene.add(ambientLight);
   
-  let resizeTimeout: NodeJS.Timeout;
+  let resizeTimeout;
   const handleResize = () => {
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(() => {
@@ -183,10 +163,10 @@ const setupThreeJS = (mountElement: HTMLDivElement) => {
   window.addEventListener('resize', handleResize);
   
   const clock = new THREE.Clock();
-  let animationId: number;
+  let animationId;
   let lastTime = 0;
   
-  const animate = (currentTime: number) => {
+  const animate = (currentTime) => {
     if (currentTime - lastTime < 33) { // Cap at 30fps for better performance
       animationId = requestAnimationFrame(animate);
       return;
@@ -238,38 +218,14 @@ const animations = {
   }
 };
 
-interface Course {
-  id: number;
-  title: string;
-  description: string;
-  duration: string;
-  level: string;
-  image?: string;
-}
-
-interface Module {
-  id: number;
-  courseId: number;
-  title: string;
-  description: string;
-  day: number;
-}
-
-interface Material {
-  id: number;
-  moduleId: number;
-  courseId: number;
-  material: string;
-}
-
-export const StudentDashboard: React.FC = () => {
+export const StudentDashboard = () => {
   const { user, logout } = useAuth();
-  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  const mountRef = useRef<HTMLDivElement>(null);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [courseModules, setCourseModules] = useState<Module[]>([]);
-  const [modulesMaterials, setModulesMaterials] = useState<Material[]>([]);
+  const mountRef = useRef(null);
+  const [courses, setCourses] = useState([]);
+  const [courseModules, setCourseModules] = useState([]);
+  const [modulesMaterials, setModulesMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
@@ -362,7 +318,7 @@ export const StudentDashboard: React.FC = () => {
     }))
   } : null;
 
-  const changeView = (newCourseId: string | null) => {
+  const changeView = (newCourseId) => {
     setSelectedCourse(newCourseId);
   };
 
@@ -370,47 +326,10 @@ export const StudentDashboard: React.FC = () => {
     setShowSettings(false);
   };
 
-  // Simple Settings Component to replace the problematic lazy import
-  const SimpleSettings = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-6">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleGoBackFromSettings}
-          className="bg-dark-400/80 backdrop-blur-md text-primary-300 border border-primary-600/30 rounded-lg px-4 py-2 flex items-center"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </motion.button>
-        <h1 className="text-2xl font-bold text-primary-400 font-display">Settings</h1>
-      </div>
-      
-      <div className="bg-dark-400/50 rounded-lg p-6 border border-primary-800/30">
-        <h2 className="text-xl font-semibold text-gray-200 mb-4">Profile Information</h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Name</label>
-            <input
-              type="text"
-              value={user?.name || ''}
-              readOnly
-              className="w-full bg-dark-400/60 border border-primary-800/30 rounded-lg px-4 py-3 text-gray-300"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
-            <input
-              type="email"
-              value={user?.email || ''}
-              readOnly
-              className="w-full bg-dark-400/60 border border-primary-800/30 rounded-lg px-4 py-3 text-gray-300"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // If showing settings, render the dedicated SettingsPage component
+  if (showSettings) {
+    return <SettingsPage onBack={handleGoBackFromSettings} user={user} />;
+  }
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
@@ -478,14 +397,7 @@ export const StudentDashboard: React.FC = () => {
             animate="visible"
             exit="hidden"
           >
-            {showSettings ? (
-              <motion.div 
-                variants={animations.item} 
-                className="bg-dark-300/60 backdrop-blur-lg rounded-2xl shadow-2xl p-4 sm:p-6 border border-dark-400/50"
-              >
-                <SimpleSettings />
-              </motion.div>
-            ) : course ? (
+            {course ? (
               <motion.div 
                 variants={animations.item} 
                 className="bg-dark-300/60 backdrop-blur-lg rounded-2xl shadow-2xl p-4 sm:p-6 border border-dark-400/50"
@@ -493,8 +405,6 @@ export const StudentDashboard: React.FC = () => {
                 <CourseDetails
                   course={course}
                   onBack={() => changeView(null)}
-                  email={user?.email}
-                  name={user?.name}
                 />
               </motion.div>
             ) : (
